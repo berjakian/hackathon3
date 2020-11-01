@@ -1,0 +1,116 @@
+
+Hackathon 3 - Here we go!
+
+
+```{r}
+
+#the magic of tidyverse includes all the following: ggplot2, tibble, tidyr, readr, purrr, dplyr, stringr, forcats
+library(tidyverse)
+
+library(igraph)
+
+
+#read in files
+sl1 <- read.csv("student-level.csv")
+
+ed1 <- read.csv("engagement-data.csv")
+
+sl2 <- sl1
+ed2 <- ed1
+
+#tests to see if there are any goofy records
+edtest1 <- unique(ed2$id)
+edtest2 <- unique(ed2$modality)
+edtest3 <- unique(ed2$week)
+sltest4 <- unique(sl2$id)
+
+## Data Restructuring
+
+#combine the Modality and Week
+ed3 <- unite(ed2, "modality-week", `modality`, `week`, sep = "-")
+
+#spread ed3 out to columns
+ed4 <- ed3 %>% spread("modality-week", "measure", fill = NA, convert = FALSE, drop = TRUE, sep = NULL)
+
+#combine the files
+sled1 <- full_join(sl2, ed4, by="id")
+
+
+#sled2 <- sled1[2,1,3,4,5]
+
+sledtest1 <- unique(sled1$parent.ed)
+
+
+```
+
+```{r}
+
+C1 <- read.csv("engagement-data.csv")
+C2 <- C1 %>% group_by(id,modality) %>% summarise(avg = mean(measure))
+C3 <- spread(C2, modality, avg)
+#rownames(C3) <- C3$id
+#C3 <- C3[,-1]
+
+
+
+sled2 <- sled1[12:16]
+
+sled2$assignmentmean <- rowMeans(subset(sled1, select = c(assignment1, 
+                                                assignment2, 
+                                                assignment3,
+                                                assignment4,
+                                                assignment5)), na.rm = TRUE)
+
+sled2$quizmean <- rowMeans(subset(sled1, select = c(quiz1, 
+                                                quiz2, 
+                                                quiz3,
+                                                quiz4,
+                                                quiz5)), na.rm = TRUE)
+
+
+sled2$gamemean <- rowMeans(subset(sled1, select = c(`game-1`, 
+                                                `game-2`, 
+                                                `game-3`,
+                                                `game-4`)), na.rm = TRUE)
+
+sled2$gamemean <- rowMeans(subset(sled1, select = c(`game-1`, 
+                                                `game-2`, 
+                                                `game-3`,
+                                                `game-4`)), na.rm = TRUE)
+
+grep("forum", names(data.table)) %>% rowMeans()
+
+
+library(fastDummies)
+
+
+sled2$exam <- sled1$exam
+
+sled3<- full_join(sled2, C3, by="id")
+
+#kmeans() requires 
+#scale... takes every number in the dataframe and does a good job of autoscaling
+sled1 %>% names
+
+
+fit <- kmeans(C3,5)
+DF <- data.frame(C3, fit$cluster)
+
+
+#data visualizations
+hist(sled3$assignmentmean)
+hist(sled3$quizmean)
+hist(sled3$exam)
+hist(sled3$forum)
+hist(sled3$video)
+hist(sled3$logins)
+hist(sled3$game)
+
+
+pairs(sled1)
+
+plot(sled1$parent.ed)
+
+
+```
+

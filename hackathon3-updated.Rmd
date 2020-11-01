@@ -1,0 +1,140 @@
+---
+title: "Hackathon-3-Workout"
+author: "Berj Akian"
+date: "10/27/2020"
+output: html_document
+---
+
+# Hackathon 3 - Clustering
+
+Two data files are included in this repo, *engagement-data.csv* represents weekly engagement with the online course for each student. It contains the following variables:
+
+* **id** - student id number
+* **modality** - the modality the student was engaging with the platform:  
+  * logins - how many times a student logged in that week  
+  * video - how many minutes of course videos the student watched that week  
+  * forum - how many forum posts the student made that week  
+  * game - how many levels of an educational game the student completed that week  
+* **measure** - the numerical measure corresponding to the modality (IE - log ins, minutes, posts, levels)  
+
+*student-level.csv* represents student characteristics including assessment results for the students
+
+* **id** - student id number
+* **assignment (1-5)** - scores on class assignments (0-100)
+* **quiz (1-5)** - score on quizes (0-20)  
+* **exam** - score on final exam (0-100)
+* **gender** - student self identified gender (a, b, c, d)
+* **parent.ed** - highest level of education of parent/guardian
+* **race.eth** - student self identified race/ethnicity
+* **free-lunch** - whether or not student recieves a free school meal
+
+
+## Libraries, data loads, and data test 
+```{r}
+#the magic of tidyverse includes all the following: ggplot2, tibble, tidyr, readr, purrr, dplyr, stringr, forcats
+library(tidyverse)
+
+library(data.table)
+
+library(igraph)
+
+
+#read in files
+#student level - Main
+#engagement level - activities
+main1 <- read.csv("student-level.csv")
+act1 <- read.csv("engagement-data.csv")
+
+
+#copies
+spare_act <- act1
+spare_main <- main1
+
+
+#tests to see if there are any goofy records
+test1 <- unique(act1$id)
+test2 <- unique(act1$modality)
+test3 <- unique(act1$week)
+test4 <- unique(main1$id)
+
+rm(test1)
+rm(test2)
+rm(test3)
+rm(test4)
+
+
+
+
+```
+
+
+
+## Data Restructuring
+```{r}
+
+
+#subtotal the 4 different activities by id and spread them horizontally
+act2 <- act1 %>% group_by(id,modality) %>% summarise(sum = sum(measure))
+act3 <- spread(act2, modality, sum)
+
+
+
+main2 <- main1
+
+#avg the assignment scores and remove the detail
+main2$assignmentmean <- main2[,grepl( "assignment" ,names(main2))] %>% rowMeans()
+main2 <- select(main2,-assignment1, -assignment2, -assignment3, -assignment4, -assignment5)
+
+#avg the quiz scores and remove the detail
+main2$quizmean <- main2[,grepl( "quiz" ,names(main2))] %>% rowMeans()
+main2 <- select(main2,-quiz1, -quiz2, -quiz3, -quiz4, -quiz5)
+
+
+#combine the data.frames
+all1 <- full_join(act3, main2, by="id")
+
+
+#rearrange columns... thank you table.frame!
+names(all1)
+setcolorder(all1,c("id", "gender", "parent.ed", "race.eth", "free.lunch", "forum", "game", "logins", "video", "assignmentmean", "quizmean", "exam"))
+names(all1)
+
+
+
+#let's check it out
+dim(all1)
+summary(all1)
+
+```
+
+
+## Graphing
+```{r}
+
+hist(all1$forum)
+hist(all1$game)
+hist(all1$logins)
+hist(all1$video)
+
+hist(all1$assignmentmean)
+hist(all1$quizmean)
+hist(all1$exam)
+
+
+pairs(all1[6:9])
+pairs(all1[10:12])
+pairs(all1[6:12])
+
+```
+
+## More analysis
+
+```{r}
+plot(all1$gender)
+```
+
+
+
+
+
+

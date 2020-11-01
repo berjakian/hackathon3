@@ -1,0 +1,74 @@
+---
+title: "hackathon3-workout8"
+author: "Berj Akian"
+date: "10/28/2020"
+output: html_document
+---
+
+#solution
+```{r}
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+```
+
+
+```{r}
+
+#read in data
+
+D1 <- read.csv("engagement-data.csv", header=TRUE)
+D2 <- read.csv("student-level.csv", header=TRUE)
+
+
+#restructure and combine
+
+D1b <- unite(D1, modality, c("modality", "week"), sep = " ")
+D1b <- spread(D1b, modality, measure)
+
+D3 <- full_join(D1b, D2, by = "id")
+
+
+#visualize engagement
+
+summary(D1b$`forum 1`)
+hist(D1b$`forum 1`, breaks = 10)
+
+summary(D1b$`game 1`)
+hist(D1b$`game 1`, breaks = 10)
+
+summary(D1b$`logins 1`)
+hist(D1b$`logins 1`, breaks = 10)
+
+summary(D1b$`video 1`)
+hist(D1b$`video 1`, breaks = 10)
+
+
+
+D3$gender <- as.factor(D3$gender)
+
+plot(D3$gender)
+
+plot(D3$gender, D3$`forum 2`)
+
+plot(D3$gender, D3$`game 2`)
+
+plot(D3$gender, D3$`logins 2`)
+
+plot(D3$gender, D3$`video 2`)
+
+D3$parent.ed <- as.factor(D3$parent.ed)
+
+plot(D3$parent.ed)
+
+plot(D3$parent.ed, D3$`forum 3`)
+
+plot(D3$parent.ed, D3$`game 3`)
+
+plot(D3$parent.ed, D3$`logins 3`)
+
+plot(D3$parent.ed, D3$`video 3`)
+
+
+```
+

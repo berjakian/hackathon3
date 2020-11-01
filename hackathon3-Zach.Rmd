@@ -1,0 +1,75 @@
+---
+title: "hackathon3"
+author: "Zach Friedman"
+date: "10/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+#read in data sets
+students <- read.csv("student-level.csv")
+engagement <- read.csv("engagement-data.csv")
+```
+
+```{r}
+#combine modality and week columns so that it can be used as spreading key (measure is value)
+engagement2 <- engagement %>% mutate(modality_week = paste(modality,week,sep = "-")) %>% select(id, modality_week,measure) %>% spread(modality_week,measure)
+
+#combine engagement data to student data, joining by student id
+student_engagement <- students %>% left_join(engagement2, by = "id") %>% select(id, everything())
+```
+
+```{r}
+# student_engagement %>% group_by(parent.ed) %>% summarize(mean_exam = mean(exam,na.rm = T)) %>% ggplot + geom_col(mapping = aes(x = parent.ed, y= mean_exam))
+```
+
+```{r}
+#sum week by week columns to make aggregate totals
+student_engagement$forum <- student_engagement[17:22] %>% rowSums
+student_engagement$game <- student_engagement[23:26] %>% rowSums
+student_engagement$logins <- student_engagement[27:32] %>% rowSums
+student_engagement$video <- student_engagement[33:38] %>% rowSums
+
+# how to combine the columns methodically by searching for a word matching the column names
+# student_engagement$forum<- student_engagement[,grepl( "forum" ,names(student_engagement))] %>% rowSums()
+```
+
+```{r}
+# form categories by exam scores and number of games played
+student_engagement <- student_engagement %>% mutate(game_exam_cat = 
+                                case_when(
+                                game < 25 & exam < 50 ~ "low_time_and_low_perf",
+                                game < 25 & exam > 50 ~ "low_time_and_high_perf",
+                                game > 25 & exam < 50 ~ "high_time_and_low_perf",
+                                game > 25 & exam > 50 ~ "high_time_and_high_perf",
+                                TRUE ~ "NA")) 
+
+#run install.packages("fastDummies") first
+library(fastDummies)
+
+#run fast dummies on all categorical variables and make free lunch a numerical variable
+student_engagement2 <- student_engagement %>% select(-game_exam_cat) %>% dummy_cols %>% select(-gender,-parent.ed, -race.eth,-id) %>% mutate(free.lunch = ifelse(free.lunch == TRUE,1,0)) %>% scale
+
+#run kmeans on all integer columns
+k_mean <- kmeans(student_engagement2,centers = 4)
+
+#merge student_engagement data frame with clusters from kmeans
+DF <- data.frame(student_engagement, k_mean$cluster)
+
+#check agreement between manual clusters and kmeans clusters
+DF %>% ggplot + geom_point(mapping = aes(x = game_exam_cat, y = k_mean.cluster))
+DF %>% group_by(k_mean.cluster) %>% count(game_exam_cat)
+
+#name the clusters variable "Student_Group" so the legend has an appropriate title
+DF$Student_Group <- as.factor(DF$k_mean.cluster)
+
+#plot final graph
+DF %>% ggplot + geom_point(mapping = aes(x = logins, y = exam, color = Student_Group)) + labs(y = "Exam Scores", x = "Number of Logins", title = "Groups of Students by Web Interaction and Exam Scores")
+```
+
